@@ -1,0 +1,31 @@
+{
+  "name": "promptstack-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc-watch --onSuccess \"npm start\"",
+    "prisma": "prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "apollo-server-express": "^3.12.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "google-auth-library": "^10.1.0",
+    "graphql": "^16.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^5.0.0",
+    "redis": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.0.3",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "tsc-watch": "^7.1.1",
+    "typescript": "^5.8.3"
+  }
+}

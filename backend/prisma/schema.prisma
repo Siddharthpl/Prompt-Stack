@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  avatarUrl   String?
+  googleId    String?  @unique
+  password    String?  // For possible local login, nullable for OAuth-only users
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  prompts     Prompt[]
+  feedbacks   Feedback[]
+}
+
+model Prompt {
+  id            String   @id @default(cuid())
+  title         String
+  content       String   // Rich text (TipTap/Quill JSON or Markdown)
+  tags          String[] // Simple array of tags
+  isPublic      Boolean  @default(false)
+  author        User     @relation(fields: [authorId], references: [id])
+  authorId      String
+  remixOf       String?  // If remixed from another prompt
+  remixCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  feedbacks     Feedback[]
+  imageUrl      String?  // For uploaded image (Cloudinary)
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  prompt    Prompt   @relation(fields: [promptId], references: [id])
+  promptId  String
+  comment   String
+  rating    Int      // 1-5
+  createdAt DateTime @default(now())
+}
