@@ -3,14 +3,26 @@ import { PrismaClient } from '@prisma/client';
 type Context = {
   prisma: PrismaClient;
   user?: any;
+  redis?: any;
 };
 
 const Query = {
   prompt: async (_parent: any, args: { id: string }, context: Context) => {
-    return context.prisma.prompt.findUnique({
+    const cacheKey = `prompt:${args.id}`;
+    if (context.redis) {
+      const cached = await context.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    }
+    const prompt = await context.prisma.prompt.findUnique({
       where: { id: args.id },
       include: { author: true, feedbacks: true },
     });
+    if (context.redis && prompt) {
+      await context.redis.set(cacheKey, JSON.stringify(prompt), { EX: 600 });
+    }
+    return prompt;
   },
   prompts: async (
     _parent: any,
@@ -18,7 +30,15 @@ const Query = {
     context: Context
   ) => {
     const { search, tags, authorId, isPublic, skip = 0, take = 10 } = args;
-    return context.prisma.prompt.findMany({
+    // Create a cache key based on arguments
+    const cacheKey = `prompts:${JSON.stringify({ search, tags, authorId, isPublic, skip, take })}`;
+    if (context.redis) {
+      const cached = await context.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    }
+    const prompts = await context.prisma.prompt.findMany({
       where: {
         AND: [
           search
@@ -39,6 +59,10 @@ const Query = {
       orderBy: { createdAt: 'desc' },
       include: { author: true, feedbacks: true },
     });
+    if (context.redis) {
+      await context.redis.set(cacheKey, JSON.stringify(prompts), { EX: 300 }); // 5 min
+    }
+    return prompts;
   },
 };
 
@@ -49,7 +73,7 @@ const Mutation = {
     context: Context
   ) => {
     if (!context.user) throw new Error('Not authenticated');
-    return context.prisma.prompt.create({
+    const created = await context.prisma.prompt.create({
       data: {
         title: args.title,
         content: args.content,
@@ -60,6 +84,11 @@ const Mutation = {
         imageUrl: args.imageUrl,
       },
     });
+    // Invalidate single and list prompt caches
+    if (context.redis) {
+      await context.redis.del(`prompts:*`); // delete all prompt list caches
+    }
+    return created;
   },
   updatePrompt: async (
     _parent: any,
@@ -70,7 +99,7 @@ const Mutation = {
     // Optionally, check if user is the author
     const prompt = await context.prisma.prompt.findUnique({ where: { id: args.id } });
     if (!prompt || prompt.authorId !== context.user.id) throw new Error('Unauthorized');
-    return context.prisma.prompt.update({
+    const updated = await context.prisma.prompt.update({
       where: { id: args.id },
       data: {
         title: args.title,
@@ -80,12 +109,23 @@ const Mutation = {
         imageUrl: args.imageUrl,
       },
     });
+    // Invalidate caches
+    if (context.redis) {
+      await context.redis.del(`prompt:${args.id}`);
+      await context.redis.del(`prompts:*`);
+    }
+    return updated;
   },
   deletePrompt: async (_parent: any, args: { id: string }, context: Context) => {
     if (!context.user) throw new Error('Not authenticated');
     const prompt = await context.prisma.prompt.findUnique({ where: { id: args.id } });
     if (!prompt || prompt.authorId !== context.user.id) throw new Error('Unauthorized');
     await context.prisma.prompt.delete({ where: { id: args.id } });
+    // Invalidate caches
+    if (context.redis) {
+      await context.redis.del(`prompt:${args.id}`);
+      await context.redis.del(`prompts:*`);
+    }
     return true;
   },
 };

@@ -8,6 +8,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
 type Context = {
   prisma: PrismaClient;
+  redis?: any;
 };
 
 function generateToken(user: any) {
@@ -44,18 +45,34 @@ const Mutation = {
     args: { email: string; password: string },
     context: Context
   ) => {
+    // Rate limit: max 5 login attempts per minute per email
+    if (context.redis) {
+      const rateKey = `login-rate:${args.email}`;
+      const current = await context.redis.incr(rateKey);
+      if (current === 1) {
+        await context.redis.expire(rateKey, 60);
+      }
+      if (current > 5) {
+        throw new Error('Too many login attempts. Please wait a minute.');
+      }
+    }
     const user = await context.prisma.user.findUnique({ where: { email: args.email } });
     if (!user || !user.password) throw new Error('Invalid credentials.');
     const valid = await bcrypt.compare(args.password, user.password);
     if (!valid) throw new Error('Invalid credentials.');
     const token = generateToken(user);
+    // Store session in Redis for 1 day
+    if (context.redis) {
+      await context.redis.set(`session:${user.id}`, JSON.stringify({ token, user }), { EX: 86400 });
+    }
     return { token, user };
   },
   googleAuth: async (
-  _parent: any,
-  args: { token: string; avatarUrl?: string }, 
-  context: Context
-) => {
+    _parent: any,
+    args: { token: string; avatarUrl?: string }, 
+    context: Context
+  ) => {
+    if (!GOOGLE_CLIENT_ID) throw new Error("Google client not configured");
   if (!GOOGLE_CLIENT_ID) throw new Error("Google client not configured");
 
   const client = new OAuth2Client(GOOGLE_CLIENT_ID);
