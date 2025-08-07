@@ -18,6 +18,8 @@ model User {
   updatedAt   DateTime @updatedAt
   prompts     Prompt[]
   feedbacks   Feedback[]
+
+  @@index([createdAt])
 }
 
 model Prompt {
@@ -34,6 +36,12 @@ model Prompt {
   updatedAt     DateTime @updatedAt
   feedbacks     Feedback[]
   imageUrl      String?  // For uploaded image (Cloudinary)
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([isPublic])
+  @@index([tags])
+  @@index([authorId, createdAt])
 }
 
 model Feedback {
@@ -45,4 +53,9 @@ model Feedback {
   comment   String
   rating    Int      // 1-5
   createdAt DateTime @default(now())
+
+  @@index([promptId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([promptId, createdAt])
 }
