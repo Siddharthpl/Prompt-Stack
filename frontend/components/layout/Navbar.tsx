@@ -25,14 +25,12 @@ export function Navbar() {
   const { data } = useQuery<{ me: User }>(ME_QUERY);
   const user = data?.me;
 
- 
   React.useEffect(() => {
     const token = localStorage.getItem("token");
     const loginFlag = localStorage.getItem("isLoggedIn");
     setIsLoggedIn(!!token || loginFlag === "true");
   }, []);
 
-  
   React.useEffect(() => {
     if (isLoggedIn) {
       localStorage.setItem("isLoggedIn", "true");
@@ -64,14 +62,16 @@ export function Navbar() {
       ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border">
+    <nav className="fixed top-0 z-50 w-full border-b bg-background backdrop-blur supports-[backdrop-filter]:bg-background/60 border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <Zap className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold text-foreground">Prompt Stack</span>
+              <span className="text-xl font-bold text-foreground">
+                Prompt Stack
+              </span>
             </Link>
           </div>
 
@@ -139,7 +139,11 @@ export function Navbar() {
                 size="icon"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                {mobileMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
               </Button>
             </div>
           </div>

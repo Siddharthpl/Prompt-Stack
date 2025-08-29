@@ -5,7 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { ApolloWrapper } from "./ApolloWrapper";
 import "./globals.css";
-import { GoogleOAuthProvider } from '@react-oauth/google';
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,14 +23,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ApolloWrapper>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <GoogleOAuthProvider clientId={process.env.GOOGLE_CLIENT_ID || ""}>
-            {children}
-            <Toaster />
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <GoogleOAuthProvider
+              clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}
+            >
+              {children}
+              <Toaster />
             </GoogleOAuthProvider>
-        </ThemeProvider>
-        </ApolloWrapper>    
-        
+          </ThemeProvider>
+        </ApolloWrapper>
       </body>
     </html>
   );

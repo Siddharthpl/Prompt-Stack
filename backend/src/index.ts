@@ -6,12 +6,26 @@ import resolvers from './graphql/resolvers';
 import { prisma } from './lib/prisma';
 import { redis, connectRedis } from './lib/redis';
 import jwt from 'jsonwebtoken';
+import EmailWorker from './workers/email.worker';
 
 const PORT = process.env.PORT || 4000;
 
 async function startServer() {
-  // Connect Redis
-  await connectRedis();
+  // Connect Redis (optional - continue if it fails)
+  let redisConnected = false;
+  try {
+    await connectRedis();
+    redisConnected = true;
+    console.log('✅ Redis connected successfully');
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.warn('⚠️  Redis connection failed, continuing without Redis:', errorMessage);
+    console.warn('   Rate limiting and session storage will be disabled');
+  }
+
+  // Start Email Worker
+  const emailWorker = new EmailWorker();
+  await emailWorker.start();
 
   // Express app
   const app = express();
@@ -34,7 +48,7 @@ async function startServer() {
       }
       return {
         prisma,
-        redis,
+        redis: redisConnected ? redis : null,
         user,
         req
       };
@@ -48,8 +62,20 @@ async function startServer() {
     res.send('Prompt Stack backend running!');
   });
 
+  // Add request logging middleware
+  app.use((req, res, next) => {
+    console.log(`📥 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+  });
+
   app.listen(PORT, () => {
     console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
+    console.log(`📧 Email worker started successfully`);
+    if (redisConnected) {
+      console.log(`🔴 Redis: Connected`);
+    } else {
+      console.log(`🔴 Redis: Not available (rate limiting disabled)`);
+    }
   });
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from "@react-oauth/google";
 import { toast } from "sonner";
 import { useMutation } from "@apollo/client";
 import { GOOGLE_AUTH_MUTATION } from "@/lib/gql/auth";
@@ -8,7 +8,10 @@ import { useRouter } from "next/navigation";
 import { Loader2Icon } from "lucide-react";
 import { useState } from "react";
 
-const avatarOptions = Array.from({ length: 10 }, (_, i) => `/avatars/avatar${i + 1}.svg`);
+const avatarOptions = Array.from(
+  { length: 10 },
+  (_, i) => `/avatars/avatar${i + 1}.svg`
+);
 
 export function GoogleSignupButton() {
   const router = useRouter();
@@ -17,7 +20,8 @@ export function GoogleSignupButton() {
 
   const handleGoogleSuccess = async (response: { credential?: string }) => {
     const idToken = response.credential;
-    const randomAvatar = avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
+    const randomAvatar =
+      avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
 
     if (!idToken) {
       toast.error("Google login failed: No credential returned.");
@@ -66,7 +70,7 @@ export function GoogleSignupButton() {
           onSuccess={handleGoogleSuccess}
           onError={() => toast.error("Google signin was canceled or failed.")}
           useOneTap={false}
-          width="100%"
+          width={400}
           theme="outline"
           size="large"
           text="continue_with"
@@ -75,4 +79,3 @@ export function GoogleSignupButton() {
     </div>
   );
 }
-

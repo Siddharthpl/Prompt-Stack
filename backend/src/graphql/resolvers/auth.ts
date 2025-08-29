@@ -3,6 +3,10 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import { queueEmail } from '../../services/emailService';
+
+// console.log('🔍 queueEmail function imported:', typeof queueEmail);
+
 const JWT_SECRET = process.env.JWT_SECRET!;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
@@ -25,6 +29,8 @@ const Mutation = {
     args: { email: string; password: string; name?: string; avatarUrl?: string },
     context: Context
   ) => {
+    // console.log('🚀 SIGNUP FUNCTION CALLED with email:', args.email);
+    
     const existing = await context.prisma.user.findUnique({ where: { email: args.email } });
     if (existing) throw new Error('Email already in use.');
     const hashedPassword = await bcrypt.hash(args.password, 10);
@@ -37,6 +43,35 @@ const Mutation = {
         googleId: null, // Ensure googleId is null for non-Google signups
       },
     });
+
+    // Send welcome email
+    try {
+      // console.log('📧 Attempting to send welcome email to:', user.email);
+      const emailQueued = await queueEmail({
+        to: user.email,
+        subject: 'Welcome to PromptHub! 🎉',
+        template: 'welcome',
+        context: {
+          name: user.name || 'there',
+          email: user.email,
+          dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
+        },
+        priority: 'normal'
+      }, {
+        userId: user.id,
+        source: 'signup'
+      });
+      
+      if (emailQueued) {
+        console.log('✅ Welcome email queued successfully for:', user.email);
+      } else {
+        console.log('❌ Failed to queue welcome email for:', user.email);
+      }
+    } catch (error) {
+      console.error('❌ Failed to queue welcome email:', error);
+      // Don't fail the signup if email fails
+    }
+
     const token = generateToken(user);
     return { token, user };
   },
@@ -73,37 +108,62 @@ const Mutation = {
     context: Context
   ) => {
     if (!GOOGLE_CLIENT_ID) throw new Error("Google client not configured");
-  if (!GOOGLE_CLIENT_ID) throw new Error("Google client not configured");
 
-  const client = new OAuth2Client(GOOGLE_CLIENT_ID);
-  const ticket = await client.verifyIdToken({
-    idToken: args.token,
-    audience: GOOGLE_CLIENT_ID,
-  });
-
-  const payload = ticket.getPayload();
-  if (!payload || !payload.email) throw new Error("Google token invalid");
-
-  // Check if user exists
-  let user = await context.prisma.user.findUnique({
-    where: { email: payload.email },
-  });
-
-  // Create if not exists
-  if (!user) {
-    user = await context.prisma.user.create({
-      data: {
-        email: payload.email,
-        name: payload.name ?? "",
-        avatarUrl: args.avatarUrl || null,
-        googleId: payload.sub,
-      },
+    const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: args.token,
+      audience: GOOGLE_CLIENT_ID,
     });
-  }
 
-  const jwtToken = generateToken(user);
-  return { token: jwtToken, user };
-}
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) throw new Error("Google token invalid");
+
+    // Check if user exists
+    let user = await context.prisma.user.findUnique({
+      where: { email: payload.email },
+    });
+
+    let isNewUser = false;
+
+    // Create if not exists
+    if (!user) {
+      isNewUser = true;
+      user = await context.prisma.user.create({
+        data: {
+          email: payload.email,
+          name: payload.name ?? "",
+          avatarUrl: args.avatarUrl || null,
+          googleId: payload.sub,
+        },
+      });
+    }
+
+    // Send welcome email only for new users
+    if (isNewUser) {
+      try {
+        await queueEmail({
+          to: user.email,
+          subject: 'Welcome to PromptHub! 🎉',
+          template: 'welcome',
+          context: {
+            name: user.name || 'there',
+            email: user.email,
+            dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
+          },
+          priority: 'normal'
+        }, {
+          userId: user.id,
+          source: 'google_signup'
+        });
+      } catch (error) {
+        console.error('Failed to queue welcome email:', error);
+        // Don't fail the auth if email fails
+      }
+    }
+
+    const jwtToken = generateToken(user);
+    return { token: jwtToken, user };
+  }
 };
 
 export default {
