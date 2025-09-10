@@ -1,21 +1,33 @@
 "use client";
-import { ApolloNextAppProvider, ApolloClient, InMemoryCache } from "@apollo/client-integration-nextjs";
+import {
+  ApolloNextAppProvider,
+  ApolloClient,
+  InMemoryCache,
+} from "@apollo/client-integration-nextjs";
 import { HttpLink } from "@apollo/client";
 import { setContext } from "@apollo/client/link/context";
 
 function makeClient() {
+  const graphqlEndpoint =
+    process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT ||
+    "http://13.202.151.13:4000/graphql";
+
+  // 👇 Add a console.log here
+  console.log("🚀 GraphQL Endpoint:", graphqlEndpoint);
+
   const httpLink = new HttpLink({
-    uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || "http://localhost:4000/graphql",
+    uri: graphqlEndpoint,
   });
 
   // Add authLink here
   const authLink = setContext((_, { headers }) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("token") : null;
     return {
       headers: {
         ...headers,
         authorization: token ? `Bearer ${token}` : "",
-      }
+      },
     };
   });
 

@@ -56,10 +56,10 @@ export function GoogleSignupButton() {
   };
 
   return (
-    <div className="w-full flex items-center justify-center">
+    <div className=" flex items-center justify-center">
       {loading ? (
         <button
-          className="w-full flex items-center justify-center gap-2 bg-muted text-foreground border border-border px-4 py-2 rounded-md cursor-not-allowed"
+          className=" flex items-center justify-center gap-2 bg-muted text-foreground border border-border px-4 py-2 rounded-md cursor-not-allowed"
           disabled
         >
           <Loader2Icon className="w-4 h-4 animate-spin" />
@@ -70,7 +70,7 @@ export function GoogleSignupButton() {
           onSuccess={handleGoogleSuccess}
           onError={() => toast.error("Google signin was canceled or failed.")}
           useOneTap={false}
-          width={400}
+          width={0}
           theme="outline"
           size="large"
           text="continue_with"

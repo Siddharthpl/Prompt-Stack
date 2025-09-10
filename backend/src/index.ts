@@ -30,6 +30,7 @@ async function startServer() {
   // Express app
   const app = express();
 
+  
   // Apollo Server setup
   const server = new ApolloServer({
     typeDefs,

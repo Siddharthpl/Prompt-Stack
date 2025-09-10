@@ -5,11 +5,17 @@ import { SIGNUP_MUTATION } from "@/lib/gql/auth";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2Icon } from "lucide-react"
+import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { GoogleSignupButton } from "./googleAuth";
 
@@ -19,7 +25,9 @@ const validateEmail = (email: string): boolean => {
   return emailRegex.test(email);
 };
 
-const validatePassword = (password: string): { isValid: boolean; strength: number; feedback: string[] } => {
+const validatePassword = (
+  password: string
+): { isValid: boolean; strength: number; feedback: string[] } => {
   const feedback: string[] = [];
   let strength = 0;
 
@@ -45,7 +53,10 @@ const validatePassword = (password: string): { isValid: boolean; strength: numbe
   };
 };
 
-export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
+export function SignUpForm({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<"div">) {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
@@ -58,7 +69,6 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
 
   // Apollo mutation
   const [signup, { loading }] = useMutation(SIGNUP_MUTATION);
-
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -81,48 +91,47 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
       newErrors.password = "Password does not meet requirements";
     }
 
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   //avatar options
-  const avatarOptions = Array.from({ length: 10 }, (_, i) =>
-  `/avatars/avatar${i + 1}.svg`
-);
+  const avatarOptions = Array.from(
+    { length: 10 },
+    (_, i) => `/avatars/avatar${i + 1}.svg`
+  );
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!validateForm()) return;
+    const randomAvatar =
+      avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
 
-  const randomAvatar = avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
-
-  try {
-    const { data } = await signup({
-      variables: {
-        email: formData.email,
-        password: formData.password,
-        name: formData.name,
-        avatarUrl: randomAvatar,
-      },
-    });
-
-    if (data?.signup?.token) {
-      localStorage.setItem("token", data.signup.token);
-      toast("Registration successful!", {
-        description: "Welcome to Prompt Stack. You can now start creating and sharing prompts.",
+    try {
+      const { data } = await signup({
+        variables: {
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          avatarUrl: randomAvatar,
+        },
       });
-      router.push("/dashboard");
+
+      if (data?.signup?.token) {
+        localStorage.setItem("token", data.signup.token);
+        toast("Registration successful!", {
+          description:
+            "Welcome to Prompt Stack. You can now start creating and sharing prompts.",
+        });
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      toast("Registration failed", {
+        description: err.message || "An error occurred during registration.",
+      });
     }
-  } catch (err: any) {
-    toast("Registration failed", {
-      description: err.message || "An error occurred during registration.",
-    });
-  }
-};
-
-
+  };
 
   const getPasswordStrengthColor = (strength: number) => {
     if (strength < 40) return "bg-red-500";
@@ -136,15 +145,14 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
     return "Strong";
   };
 
-  
-
-
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="bg-card border border-border shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-xl text-foreground">Welcome</CardTitle>
-          <CardDescription className="text-muted-foreground">Continue with your Google account</CardDescription>
+          <CardDescription className="text-muted-foreground">
+            Continue with your Google account
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form>
@@ -159,7 +167,9 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
               </div>
               <div className="grid gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="name" className="text-foreground">Name</Label>
+                  <Label htmlFor="name" className="text-foreground">
+                    Name
+                  </Label>
                   <Input
                     id="name"
                     type="text"
@@ -167,7 +177,11 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className={errors.name ? "border-red-500 bg-muted text-foreground" : "bg-muted text-foreground"}
+                    className={
+                      errors.name
+                        ? "border-red-500 bg-muted text-foreground"
+                        : "bg-muted text-foreground"
+                    }
                     placeholder="Jhon Doe"
                   />
                   {errors.name && (
@@ -175,7 +189,9 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                   )}
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email" className="text-foreground">Email</Label>
+                  <Label htmlFor="email" className="text-foreground">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -183,7 +199,11 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    className={errors.email ? "border-red-500 bg-muted text-foreground" : "bg-muted text-foreground"}
+                    className={
+                      errors.email
+                        ? "border-red-500 bg-muted text-foreground"
+                        : "bg-muted text-foreground"
+                    }
                     placeholder="m@example.com"
                   />
                   {errors.email && (
@@ -192,7 +212,9 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                 </div>
                 <div className="grid gap-2">
                   <div className="flex items-center">
-                    <Label htmlFor="password" className="text-foreground">Password</Label>
+                    <Label htmlFor="password" className="text-foreground">
+                      Password
+                    </Label>
                   </div>
                   <Input
                     id="password"
@@ -201,7 +223,11 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className={errors.password ? "border-red-500 bg-muted text-foreground" : "bg-muted text-foreground"}
+                    className={
+                      errors.password
+                        ? "border-red-500 bg-muted text-foreground"
+                        : "bg-muted text-foreground"
+                    }
                     placeholder="********"
                   />
                 </div>
@@ -254,7 +280,10 @@ export function SignUpForm({ className, ...props }: React.ComponentPropsWithoutR
               </div>
               <div className="text-center text-sm text-muted-foreground">
                 Already have an account?{" "}
-                <Link href="/login" className="underline underline-offset-4 text-primary hover:text-primary/50">
+                <Link
+                  href="/login"
+                  className="underline underline-offset-4 text-primary hover:text-primary/50"
+                >
                   Login
                 </Link>
               </div>
