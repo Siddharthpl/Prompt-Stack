@@ -39,30 +39,16 @@ services:
     depends_on:
       - backend
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').request('http://localhost:3000', console.log).end()"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').request('http://localhost:3000', console.log).end()",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: prompthub-nginx
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/logs:/var/log/nginx
-    depends_on:
-      - frontend
-      - backend
     logging:
       driver: "json-file"
       options:

@@ -71,7 +71,6 @@ jobs:
             export DOCKERHUB_USERNAME=${{ env.DOCKERHUB_USERNAME }}
 
             # Create necessary directories
-            mkdir -p ~/prompthub/nginx/{conf.d,ssl,logs}
             mkdir -p ~/prompthub/backend
             mkdir -p ~/prompthub/frontend
 
@@ -105,6 +104,10 @@ jobs:
 
             # Start the services
             docker-compose -f docker-compose.prod.yml up -d
+
+            # Ensure nginx is running on host system
+            sudo systemctl restart nginx
+            sudo systemctl status nginx
 
             # Clean up unused images
             docker image prune -f
