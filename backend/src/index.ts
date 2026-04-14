@@ -8,7 +8,7 @@ import { redis, connectRedis } from './lib/redis';
 import jwt from 'jsonwebtoken';
 import EmailWorker from './workers/email.worker';
 
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 
 async function startServer() {
   // Connect Redis (optional - continue if it fails)
