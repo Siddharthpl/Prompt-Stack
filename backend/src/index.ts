@@ -69,7 +69,7 @@ async function startServer() {
     next();
   });
 
-  app.listen(PORT, () => {
+  app.listen(PORT,'0.0.0.0', () => {
     console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`);
     console.log(`📧 Email worker started successfully`);
     if (redisConnected) {
